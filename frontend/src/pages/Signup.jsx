@@ -9,6 +9,7 @@ import {
   signupSuccess,
   clearError,
 } from "../Redux/feature/authSlice";
+import api from "../config";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -36,13 +37,7 @@ const Signup = () => {
     dispatch(signupRequest());
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:4000/auth/signup",
-        formData,
-        {
-          withCredentials: true,
-        },
-      );
+      const { data } = await api.post("/auth/signup", formData);
 
       dispatch(
         signupSuccess({
@@ -77,7 +72,6 @@ const Signup = () => {
         {/* Right */}
 
         <div className="p-10 md:p-14">
-
           <h2 className="text-4xl font-bold text-white">Create Account 🚀</h2>
 
           <p className="text-zinc-400 mt-2">

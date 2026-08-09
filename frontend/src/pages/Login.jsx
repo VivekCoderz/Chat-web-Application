@@ -9,6 +9,7 @@ import {
   loginSuccess,
   clearError,
 } from "../Redux/feature/authSlice";
+import api from "../config";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -35,13 +36,7 @@ const Login = () => {
     dispatch(loginRequest());
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:4000/auth/login",
-        formData,
-        {
-          withCredentials: true,
-        },
-      );
+      const { data } = await api.post("/auth/login", formData);
 
       dispatch(
         loginSuccess({
