@@ -122,8 +122,8 @@ module.exports.login = async (req, res) => {
 module.exports.logout = async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "lax",
-    secure: false, // Production me true (HTTPS)
+    sameSite: "none",
+    secure: true, // Production me true (HTTPS)
   });
 
   return res.status(200).json({

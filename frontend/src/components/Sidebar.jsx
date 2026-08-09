@@ -6,10 +6,26 @@ import {
   X,
 } from "lucide-react";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import api from "../config";
+import { logoutFail, logoutRequest, logoutSuccess } from "../Redux/feature/authSlice";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const user = useSelector((store) => store.authReducer.user);
+  const dispatch = useDispatch()
+  
+
+  const handleLogout = async (e) => {
+    dispatch(logoutRequest())
+    try{
+        const {data} = await api.post("/auth/logout")
+        dispatch(logoutSuccess())
+    }catch(err){
+        dispatch(logoutFail(err.response?.data?.message || "Something went wrong"))
+
+    }
+
+  }
 
   return (
     <aside
@@ -178,7 +194,8 @@ const Sidebar = ({ isOpen, onClose }) => {
               hover:text-red-500
             "
           >
-            <LogOut size={15} />
+            <LogOut size={15} onClick={handleLogout}/>
+            
           </button>
 
         </div>
