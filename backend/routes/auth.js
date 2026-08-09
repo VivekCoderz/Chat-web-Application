@@ -5,7 +5,7 @@ const authMiddleware = require("../middleware/authenticate.js")
 
 router.post('/signup',authController.signup)
 router.post('/login',authController.login)
-router.post('/login',authMiddleware.isAuthenticated,authController.logout)
+router.post('/logout',authMiddleware.isAuthenticated,authController.logout)
 router.get('/me',authMiddleware.isAuthenticated,authController.getCurrentUser)
 
 module.exports = router
