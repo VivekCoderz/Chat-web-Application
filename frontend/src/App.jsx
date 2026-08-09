@@ -14,6 +14,7 @@ import {
 } from "./Redux/feature/authSlice";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MessageAlert from "./components/MessageAlert.jsx"
+import api from "./config.js";
 
 const App = () => {
     const { error, message } = useSelector((store) => store.authReducer);
@@ -22,10 +23,10 @@ const App = () => {
     const fetchUser = async () => {
       dispatch(loadUserRequest());
       try {
-        const { data } = await axios.get("http://localhost:4000/auth/me", {
+        const { data } = await api.get("/auth/me", {
           withCredentials: true,
         });
-        
+
         dispatch(loadUserSuccess(data.user));
       } catch (err) {
         dispatch(
