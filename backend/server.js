@@ -85,7 +85,7 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("userTyping", {
       userId: socket.user._id.toString(),
       name: socket.user.name,
-      avatar : socket.user.avatar
+      avatar: socket.user.avatar,
     });
   });
 
@@ -111,13 +111,9 @@ io.on("connection", (socket) => {
 
 app.use("/auth", authRouter);
 
-mongoose
-  .connect(
-    "mongodb+srv://vivekgarg0605:06062005@cluster0.gvtemeh.mongodb.net/chatApplication",
-  )
-  .then(() => {
-    console.log("datavse connected successfully");
-    server.listen(4000, () => {
-      console.log("server run on port 4000");
-    });
+mongoose.connect(process.env.DB_URL).then(() => {
+  console.log("datavse connected successfully");
+  server.listen(4000, () => {
+    console.log("server run on port 4000");
   });
+});
