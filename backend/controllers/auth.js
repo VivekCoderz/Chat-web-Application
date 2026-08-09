@@ -40,7 +40,7 @@ module.exports.signup = async (req, res) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: true,
-      sameSite: "lax",
+      sameSite: "none",
     });
 
     res.status(201).json({
@@ -97,7 +97,7 @@ module.exports.login = async (req, res) => {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
       secure: true,
-      sameSite: "lax",
+      sameSite: "none",
     });
 
     res.status(200).json({
