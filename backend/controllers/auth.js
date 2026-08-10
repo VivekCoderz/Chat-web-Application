@@ -154,3 +154,69 @@ exports.getCurrentUser = async (req, res) => {
     });
   }
 };
+
+const { streamUpload } = require("../middleware/cloudinary.js");
+
+exports.uploadFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+    const resourceType = req.file.mimetype.startsWith("video") ? "video" : "image";
+    const result = await streamUpload(req.file.buffer, resourceType);
+    return res.status(200).json({
+      success: true,
+      url: result.secure_url,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, avatar, role, bio, whatsappAbout, shopName, shopImage, instagramLink, whatsappLink } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (name) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (role) user.role = role;
+    if (bio !== undefined) user.bio = bio;
+    if (whatsappAbout !== undefined) user.whatsappAbout = whatsappAbout;
+    if (shopName !== undefined) user.shopName = shopName;
+    if (shopImage !== undefined) user.shopImage = shopImage;
+    if (instagramLink !== undefined) user.instagramLink = instagramLink;
+    if (whatsappLink !== undefined) user.whatsappLink = whatsappLink;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    return res.status(200).json({ success: true, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

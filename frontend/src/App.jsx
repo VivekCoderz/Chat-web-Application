@@ -17,8 +17,18 @@ import MessageAlert from "./components/MessageAlert.jsx"
 import api from "./config.js";
 
 const App = () => {
-    const { error, message } = useSelector((store) => store.authReducer);
-    const dispatch = useDispatch();
+  const { error, message } = useSelector((store) => store.authReducer);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       dispatch(loadUserRequest());

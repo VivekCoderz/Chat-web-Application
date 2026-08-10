@@ -25,6 +25,56 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    role: {
+      type: String,
+      enum: ["user", "seller"],
+      default: "user",
+    },
+
+    bio: {
+      type: String,
+      default: "",
+    },
+
+    whatsappAbout: {
+      type: String,
+      default: "Hey there! I am using NexaChat.",
+    },
+
+    shopName: {
+      type: String,
+      default: "",
+    },
+
+    shopImage: {
+      type: String,
+      default: "",
+    },
+
+    instagramLink: {
+      type: String,
+      default: "",
+    },
+
+    whatsappLink: {
+      type: String,
+      default: "",
+    },
+
+    followers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
 {
     timestamps:true

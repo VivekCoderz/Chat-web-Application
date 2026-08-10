@@ -1,6 +1,9 @@
 import { io } from "socket.io-client";
 import api from "../config";
 
-export const socket = io("https://nexachat-backend-akdr.onrender.com",{
+
+const hostedServer = "https://nexachat-backend-akdr.onrender.com"
+const localServer = "http://localhost:4000"
+export const socket = io(localServer,{
     withCredentials : true
 });
