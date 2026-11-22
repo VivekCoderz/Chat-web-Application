@@ -23,6 +23,11 @@ export const addToCart = (product, sellerId, sellerName) => {
 const ShoppingCart = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [activeCoupon, setActiveCoupon] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
 
   useEffect(() => {
     setCartItems(getCart());
@@ -71,12 +76,19 @@ const ShoppingCart = ({ isOpen, onClose }) => {
         sellerId: item.sellerId,
         productId: item.product._id,
         quantity: item.quantity,
+        couponApplied: activeCoupon || undefined,
+        discountAmount: activeCoupon ? discount : undefined,
       });
     });
 
     // Clear cart
     localStorage.removeItem("nexacart");
     setCartItems([]);
+    setActiveCoupon("");
+    setCouponCode("");
+    setDiscount(0);
+    setCouponSuccess("");
+    setCouponError("");
     window.dispatchEvent(new Event("cartUpdate"));
 
     // Confetti animation
@@ -91,6 +103,19 @@ const ShoppingCart = ({ isOpen, onClose }) => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
+
+  useEffect(() => {
+    if (activeCoupon === "NEXA10") {
+      setDiscount(subtotal * 0.1);
+    } else if (activeCoupon === "SAVE200") {
+      setDiscount(Math.min(200, subtotal));
+    } else {
+      setDiscount(0);
+    }
+  }, [subtotal, activeCoupon]);
+
+  const deliveryFee = subtotal > 0 ? (subtotal >= 1000 ? 0 : 40) : 0;
+  const finalTotal = Math.max(0, subtotal - discount + deliveryFee);
 
   return (
     <>
@@ -156,7 +181,7 @@ const ShoppingCart = ({ isOpen, onClose }) => {
 
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs font-bold text-violet-650 dark:text-violet-400">
-                      ${(item.product.price * item.quantity).toFixed(2)}
+                      ₹{(item.product.price * item.quantity).toLocaleString()}
                     </span>
 
                     {/* Quantity Selector */}
@@ -191,25 +216,93 @@ const ShoppingCart = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Footer subtotal */}
-        {cartItems.length > 0 && (
-          <div className="shrink-0 border-t border-gray-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900 space-y-4">
-            <div className="flex justify-between items-center text-xs font-semibold text-gray-550 dark:text-slate-400">
+      {/* Footer subtotal */}
+      {cartItems.length > 0 && (
+        <div className="shrink-0 border-t border-gray-200 dark:border-slate-800 p-5 bg-white dark:bg-slate-900 space-y-4">
+          
+          {/* Coupon Code Input */}
+          <div className="space-y-1.5 border-b border-gray-100 dark:border-slate-800/60 pb-3">
+            <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Have a Coupon?</span>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="e.g. NEXA10, SAVE200"
+                className="flex-1 bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-[11px] text-gray-800 dark:text-white outline-none focus:border-violet-500 transition"
+                disabled={!!activeCoupon}
+              />
+              {activeCoupon ? (
+                <button
+                  onClick={() => {
+                    setActiveCoupon("");
+                    setCouponCode("");
+                    setDiscount(0);
+                    setCouponSuccess("");
+                  }}
+                  className="py-1.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-955/20 text-rose-605 dark:text-rose-400 text-[10px] font-bold hover:bg-rose-100 transition cursor-pointer"
+                >
+                  Remove
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setCouponError("");
+                    setCouponSuccess("");
+                    const code = couponCode.trim().toUpperCase();
+                    if (code === "NEXA10") {
+                      setActiveCoupon("NEXA10");
+                      setCouponSuccess("NEXA10 applied: 10% Off!");
+                    } else if (code === "SAVE200") {
+                      setActiveCoupon("SAVE200");
+                      setCouponSuccess("SAVE200 applied: ₹200 Off!");
+                    } else {
+                      setCouponError("Invalid coupon code");
+                    }
+                  }}
+                  className="py-1.5 px-4 rounded-xl bg-violet-50 dark:bg-violet-950/20 text-violet-750 dark:text-violet-400 text-[10px] font-black hover:bg-violet-100 transition cursor-pointer border border-violet-200 dark:border-violet-900/30"
+                >
+                  Apply
+                </button>
+              )}
+            </div>
+            {couponError && <p className="text-[9px] font-bold text-rose-500">{couponError}</p>}
+            {couponSuccess && <p className="text-[9px] font-bold text-emerald-500">{couponSuccess}</p>}
+          </div>
+
+          {/* Calculations Breakdown */}
+          <div className="space-y-2 text-xs font-semibold text-gray-550 dark:text-slate-400">
+            <div className="flex justify-between items-center text-[11px]">
               <span>Subtotal</span>
-              <span className="text-base font-extrabold text-gray-900 dark:text-white">
-                ${subtotal.toFixed(2)}
+              <span className="font-semibold text-gray-800 dark:text-slate-200">₹{subtotal.toLocaleString()}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between items-center text-[11px] text-emerald-600 font-bold">
+                <span>Coupon Discount</span>
+                <span>- ₹{discount.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center text-[11px]">
+              <span>Delivery Charge</span>
+              <span className="font-semibold text-gray-800 dark:text-slate-200">
+                {deliveryFee === 0 ? "Free" : `₹${deliveryFee}`}
               </span>
             </div>
-
-            <button
-              onClick={handleCheckout}
-              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 py-2.5 text-xs font-bold text-white transition hover:bg-violet-700 shadow-md hover:scale-[0.98]"
-            >
-              Checkout Order
-              <ArrowRight size={13} />
-            </button>
+            <div className="flex justify-between items-center text-xs font-bold text-gray-700 dark:text-white border-t border-dashed border-gray-150 dark:border-slate-800/50 pt-2">
+              <span>Final Total</span>
+              <span className="text-sm font-black text-violet-605 dark:text-violet-400">₹{finalTotal.toLocaleString()}</span>
+            </div>
           </div>
-        )}
+
+          <button
+            onClick={handleCheckout}
+            className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-violet-650 py-2.5 text-xs font-bold text-white transition hover:bg-violet-700 shadow-md hover:scale-[0.98] cursor-pointer mt-1"
+          >
+            Checkout Order
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      )}
       </aside>
 
       {/* Confetti Overlay */}

@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.js");
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, "chatapplication2026", {
+  return jwt.sign({ id }, process.env.JWT_SECRET || "chatapplication2026", {
     expiresIn: "1d",
   });
 };
@@ -36,11 +36,12 @@ module.exports.signup = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: true,
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(201).json({
@@ -93,11 +94,12 @@ module.exports.login = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: true,
-      sameSite: "none",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(200).json({
@@ -120,10 +122,11 @@ module.exports.login = async (req, res) => {
 };
 
 module.exports.logout = async (req, res) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "none",
-    secure: true, // Production me true (HTTPS)
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
   });
 
   return res.status(200).json({

@@ -1,5 +1,12 @@
 const express = require("express");
 require("dotenv").config();
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
 const http = require("http");
 const cors = require("cors");
 const socketio = require("socket.io");
@@ -709,6 +716,24 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("viewReel", async ({ reelId }) => {
+    try {
+      const reel = await Reel.findById(reelId);
+      if (!reel) return;
+      reel.views = (reel.views || 0) + 1;
+      await reel.save();
+
+      const updatedReel = await Reel.findById(reelId)
+        .populate("seller", "name avatar bio shopName shopImage role whatsappAbout instagramLink whatsappLink")
+        .populate("product")
+        .populate("comments.user", "name avatar");
+
+      io.emit("reelUpdated", updatedReel);
+    } catch (error) {
+      console.error("Error viewing reel:", error);
+    }
+  });
+
   // ================= FOLLOW SYSTEM =================
   socket.on("followUser", async ({ targetUserId }) => {
     try {
@@ -836,7 +861,6 @@ io.on("connection", (socket) => {
 });
 
 app.use("/auth", authRouter);
-
 mongoose.connect(process.env.DB_URL).then(() => {
   console.log("datavse connected successfully");
   server.listen(4000, () => {

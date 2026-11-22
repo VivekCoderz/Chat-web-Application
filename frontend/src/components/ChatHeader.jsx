@@ -14,11 +14,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { useState, useEffect } from "react";
 import { socket } from "../socket/socket";
 import { setActiveChat, clearMessages } from "../Redux/feature/generalChatSlice";
-import UserProfileModal from "./UserProfileModal";
+import { useNavigate } from "react-router-dom";
 
 const ChatHeader = ({ onMenuClick, onUsersClick, onShopClick, onCartClick }) => {
   const dispatch = useDispatch();
-  const [profileUserId, setProfileUserId] = useState(null);
+  const navigate = useNavigate();
   const activeChat = useSelector((store) => store.generalCharReducer.activeChat);
   const onlineUsers = useSelector((store) => store.onlineUsers.users);
   const [cartCount, setCartCount] = useState(0);
@@ -75,9 +75,9 @@ const ChatHeader = ({ onMenuClick, onUsersClick, onShopClick, onCartClick }) => 
 
   const handleHeaderClick = () => {
     if (activeChat.type === "private" && activeChat.user?._id) {
-      setProfileUserId(activeChat.user._id);
+      navigate(`/profile/${activeChat.user._id}`);
     } else if (activeChat.type === "group" && (activeChat.group?.creator?._id || activeChat.group?.creator)) {
-      setProfileUserId(activeChat.group.creator._id || activeChat.group.creator);
+      navigate(`/profile/${activeChat.group.creator._id || activeChat.group.creator}`);
     }
   };
 
@@ -149,15 +149,7 @@ const ChatHeader = ({ onMenuClick, onUsersClick, onShopClick, onCartClick }) => 
             <div className="mt-0.5 flex items-center gap-2">
               {activeChat.type === "general" ? (
                 <>
-                  {/* Light mode subtitle */}
-                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-gray-500 dark:hidden">
-                    <span>Public Room</span>
-                    <span className="text-gray-300">•</span>
-                    <span>1,180 Members</span>
-                  </div>
-
-                  {/* Dark mode subtitle */}
-                  <div className="hidden dark:flex items-center gap-1.5 text-[11.5px] text-gray-450">
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-500 dark:text-gray-405">
                     <span>{statusText}</span>
                   </div>
                 </>
@@ -269,13 +261,6 @@ const ChatHeader = ({ onMenuClick, onUsersClick, onShopClick, onCartClick }) => 
         </div>
       </header>
 
-      {profileUserId && (
-        <UserProfileModal
-          isOpen={!!profileUserId}
-          onClose={() => setProfileUserId(null)}
-          userId={profileUserId}
-        />
-      )}
     </>
   );
 };

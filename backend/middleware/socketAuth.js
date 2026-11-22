@@ -27,7 +27,7 @@ const socketAuth = async (socket, next) => {
     // JWT verify
     const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET
+        process.env.JWT_SECRET || "chatapplication2026"
     );
     
     // User database se find

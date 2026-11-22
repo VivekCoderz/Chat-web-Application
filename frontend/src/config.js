@@ -1,13 +1,13 @@
 import axios from "axios";
 
+export const BACKEND_URL = "http://localhost:4000"; // Mode toggle: Change here to switch URL everywhere!
+
 const api = axios.create({
-  baseURL: "https://nexachat-backend-akdr.onrender.com",
-//   baseURL : "http://localhost:4000", 
+  baseURL: BACKEND_URL, 
   withCredentials: true,
-    headers: {
+  headers: {
     "Content-Type": "application/json",
   },
 });
-
 
 export default api;
