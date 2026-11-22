@@ -42,8 +42,6 @@ const ShoppingCart = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const updateQuantity = (productId, change) => {
     const updated = cartItems
       .map((item) => {
@@ -113,6 +111,10 @@ const ShoppingCart = ({ isOpen, onClose }) => {
       setDiscount(0);
     }
   }, [subtotal, activeCoupon]);
+
+  // Must come after every hook: returning early before the coupon useEffect
+  // changed the hook count between closed/open renders and crashed React.
+  if (!isOpen) return null;
 
   const deliveryFee = subtotal > 0 ? (subtotal >= 1000 ? 0 : 40) : 0;
   const finalTotal = Math.max(0, subtotal - discount + deliveryFee);
