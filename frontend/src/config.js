@@ -1,13 +1,16 @@
 import axios from "axios";
 
+// `npm run dev` talks to the local backend; production builds (Vercel) use the hosted API.
+export const BACKEND_URL = import.meta.env.DEV
+  ? "http://localhost:4000"
+  : "https://nexachat-backend-akdr.onrender.com";
+
 const api = axios.create({
-  baseURL: "https://nexachat-backend-akdr.onrender.com",
-//   baseURL : "http://localhost:4000", 
+  baseURL: BACKEND_URL, 
   withCredentials: true,
-    headers: {
+  headers: {
     "Content-Type": "application/json",
   },
 });
-
 
 export default api;

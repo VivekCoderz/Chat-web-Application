@@ -1,5 +1,12 @@
 const express = require("express");
 require("dotenv").config();
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
 const http = require("http");
 const cors = require("cors");
 const socketio = require("socket.io");
@@ -75,7 +82,9 @@ io.on("connection", (socket) => {
       const allGeneralMessage = await GeneralChat.find({ deletedBy: { $ne: user._id } })
         .populate("sender", "name avatar")
         .sort({ createdAt: 1 });
-      io.to("general").emit("generalMessages", allGeneralMessage);
+      // Only the requesting user: the list is filtered by *their* deletedBy,
+      // and broadcasting it would reset every other user's open chat.
+      socket.emit("generalMessages", allGeneralMessage);
     } catch (error) {
       socket.emit("generalChatError", error.message);
     }
@@ -240,12 +249,25 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("joinGroup", ({ groupId }) => {
-    socket.join(groupId);
+  // Only members may read, post to, or listen in on a group
+  const isGroupMember = (groupId) =>
+    Group.exists({ _id: groupId, members: user._id });
+
+  socket.on("joinGroup", async ({ groupId }) => {
+    try {
+      if (await isGroupMember(groupId)) {
+        socket.join(groupId.toString());
+      }
+    } catch (error) {
+      socket.emit("chatError", error.message);
+    }
   });
 
   socket.on("getGroupMessages", async ({ groupId }) => {
     try {
+      if (!(await isGroupMember(groupId))) {
+        return socket.emit("chatError", "You are not a member of this group");
+      }
       // Mark as seen by adding user._id to seenBy
       await GroupMessage.updateMany(
         { group: groupId, seenBy: { $ne: user._id } },
@@ -266,6 +288,9 @@ io.on("connection", (socket) => {
 
   socket.on("sendGroupMessage", async ({ groupId, message, replyTo }) => {
     try {
+      if (!(await isGroupMember(groupId))) {
+        return socket.emit("chatError", "You are not a member of this group");
+      }
       const newMessage = await GroupMessage.create({
         group: groupId,
         sender: user._id,
@@ -285,6 +310,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("groupTyping", ({ groupId }) => {
+    if (!groupId || !socket.rooms.has(groupId.toString())) return;
     socket.broadcast.to(groupId.toString()).emit("userTyping", {
       userId: user._id.toString(),
       name: user.name,
@@ -338,12 +364,14 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("createOrder", async ({ sellerId, productId, quantity }) => {
+  socket.on("createOrder", async ({ productId, quantity }) => {
     try {
       const product = await Product.findById(productId);
       if (!product) {
         return socket.emit("chatError", "Product not found");
       }
+      // Trust the product's real seller, not a client-supplied id
+      const sellerId = product.seller;
       const qty = quantity || 1;
       const totalPrice = product.price * qty;
 
@@ -709,6 +737,24 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("viewReel", async ({ reelId }) => {
+    try {
+      const reel = await Reel.findById(reelId);
+      if (!reel) return;
+      reel.views = (reel.views || 0) + 1;
+      await reel.save();
+
+      const updatedReel = await Reel.findById(reelId)
+        .populate("seller", "name avatar bio shopName shopImage role whatsappAbout instagramLink whatsappLink")
+        .populate("product")
+        .populate("comments.user", "name avatar");
+
+      io.emit("reelUpdated", updatedReel);
+    } catch (error) {
+      console.error("Error viewing reel:", error);
+    }
+  });
+
   // ================= FOLLOW SYSTEM =================
   socket.on("followUser", async ({ targetUserId }) => {
     try {
@@ -836,10 +882,16 @@ io.on("connection", (socket) => {
 });
 
 app.use("/auth", authRouter);
-
-mongoose.connect(process.env.DB_URL).then(() => {
-  console.log("datavse connected successfully");
-  server.listen(4000, () => {
-    console.log("server run on port 4000");
+const PORT = process.env.PORT || 4000;
+mongoose
+  .connect(process.env.DB_URL)
+  .then(() => {
+    console.log("datavse connected successfully");
+    server.listen(PORT, () => {
+      console.log(`server run on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error.message);
+    process.exit(1);
   });
-});

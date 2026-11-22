@@ -11,7 +11,7 @@ exports.isAuthenticated = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token,"chatapplication2026" );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "chatapplication2026");
 
     req.user = decoded;
 

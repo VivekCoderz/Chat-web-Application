@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, ShoppingBag, Plus, Upload, X, Send, Play, Pause, User } from "lucide-react";
+import { Heart, MessageCircle, ShoppingBag, Plus, Upload, X, Send, Play, Pause, User, Bookmark } from "lucide-react";
 import { socket } from "../socket/socket";
 import { useSelector } from "react-redux";
 import api from "../config";
 import UserProfileModal from "./UserProfileModal";
 import { addToCart } from "./ShoppingCart";
+import { useNavigate } from "react-router-dom";
 
 // ReelCard subcomponent to manage individual videos
 const ReelCard = ({ reel, isActive, currentUser, onLike, onCommentClick, onProductClick, onProfileClick, isFollowing, onToggleFollow }) => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [savedReels, setSavedReels] = useState(() => {
+    return JSON.parse(localStorage.getItem("nexasavedreels") || "[]");
+  });
 
   useEffect(() => {
     if (videoRef.current) {
@@ -42,6 +46,18 @@ const ReelCard = ({ reel, isActive, currentUser, onLike, onCommentClick, onProdu
   };
 
   const hasLiked = reel.likes?.includes(currentUser?._id || currentUser?.id);
+  const isSaved = savedReels.some(r => r._id === reel._id);
+
+  const toggleSave = () => {
+    let updated;
+    if (isSaved) {
+      updated = savedReels.filter(r => r._id !== reel._id);
+    } else {
+      updated = [...savedReels, reel];
+    }
+    localStorage.setItem("nexasavedreels", JSON.stringify(updated));
+    setSavedReels(updated);
+  };
 
   return (
     <div className="snap-start snap-always w-full h-full relative flex-shrink-0 flex items-center justify-center bg-black">
@@ -120,6 +136,22 @@ const ReelCard = ({ reel, isActive, currentUser, onLike, onCommentClick, onProdu
           <span className="text-[10px] font-bold">{reel.comments?.length || 0}</span>
         </button>
 
+        {/* Save/Bookmark Button */}
+        <button
+          onClick={toggleSave}
+          className="flex flex-col items-center gap-1 text-white"
+        >
+          <div className="p-2.5 rounded-full bg-slate-900/50 hover:bg-amber-500/20 transition">
+            <Bookmark
+              size={20}
+              className={`transition-all duration-300 ${
+                isSaved ? "fill-amber-500 stroke-amber-500 text-amber-500" : "text-white"
+              }`}
+            />
+          </div>
+          <span className="text-[10px] font-bold">{isSaved ? "Saved" : "Save"}</span>
+        </button>
+
         {/* Tagged Product Card Link */}
         {reel.product && (
           <button
@@ -174,6 +206,7 @@ const ReelCard = ({ reel, isActive, currentUser, onLike, onCommentClick, onProdu
 };
 
 const ReelsSection = () => {
+  const navigate = useNavigate();
   const user = useSelector((store) => store.authReducer.user);
   const [reels, setReels] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -206,6 +239,12 @@ const ReelsSection = () => {
       setFollowedSellers(new Set(user.following || []));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (reels.length > 0 && reels[activeIdx]?._id) {
+      socket.emit("viewReel", { reelId: reels[activeIdx]._id });
+    }
+  }, [activeIdx, reels]);
 
   // Fetch reels from socket
   useEffect(() => {
@@ -343,18 +382,28 @@ const ReelsSection = () => {
       {/* ================================= */}
       {/* TOP HEADER CONTROLS */}
       {/* ================================= */}
-      <div className="absolute top-4 left-6 z-10 flex items-center justify-between w-[90%] max-w-sm sm:max-w-none">
+      <div className="absolute top-4 left-6 right-6 z-10 flex items-center justify-between">
         <h2 className="text-base font-extrabold bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent flex items-center gap-1.5 drop-shadow-md">
           <Play size={18} className="fill-violet-500 stroke-violet-500" />
           NexaSpotlight
         </h2>
-        <button
-          onClick={() => setIsUploadOpen(true)}
-          className="flex items-center gap-1.5 rounded-full bg-violet-600 hover:bg-violet-700 px-4 py-2 text-xs font-bold text-white shadow-lg transition active:scale-95"
-        >
-          <Plus size={14} />
-          Upload Spotlight
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Creator Analytics Button */}
+          <button
+            onClick={() => navigate("/spotlight/analytics")}
+            className="flex items-center gap-1 px-3.5 py-2 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white text-xs font-bold transition active:scale-95 border border-slate-700/50 shadow-md cursor-pointer"
+            title="View Creator Analytics"
+          >
+            📈 <span className="hidden sm:inline">Analytics</span>
+          </button>
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-violet-600 hover:bg-violet-700 px-4 py-2 text-xs font-bold text-white shadow-lg transition active:scale-95 cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Upload</span>
+          </button>
+        </div>
       </div>
 
       {/* ================================= */}
@@ -386,7 +435,7 @@ const ReelsSection = () => {
                 setActiveReelForProduct(r);
                 setIsProductOpen(true);
               }}
-              onProfileClick={setSelectedUserId}
+              onProfileClick={(id) => navigate(`/profile/${id}`)}
               isFollowing={followedSellers.has(reel.seller?._id || reel.seller)}
               onToggleFollow={handleToggleFollow}
             />
@@ -595,14 +644,6 @@ const ReelsSection = () => {
         </div>
       )}
 
-      {/* User details profile modal */}
-      {selectedUserId && (
-        <UserProfileModal
-          isOpen={!!selectedUserId}
-          onClose={() => setSelectedUserId(null)}
-          userId={selectedUserId}
-        />
-      )}
     </div>
   );
 };

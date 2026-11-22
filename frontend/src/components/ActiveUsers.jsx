@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Users, UserPlus, MoreVertical, ChevronDown, Plus, Camera, Trash2 } from "lucide-react";
+import { X, Users, UserPlus, MoreVertical, ChevronDown, Plus, Camera, Trash2, Send, Heart } from "lucide-react";
 import { useSelector } from "react-redux";
 import { socket } from "../socket/socket";
 import api from "../config";

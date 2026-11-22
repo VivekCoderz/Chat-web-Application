@@ -20,10 +20,11 @@ import { socket } from "../socket/socket";
 import UsersModal from "./UsersModal";
 import CreateGroupModal from "./CreateGroupModal";
 import SettingsModal from "./SettingsModal";
-import UserProfileModal from "./UserProfileModal";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((store) => store.authReducer.user);
   const activeChat = useSelector((store) => store.generalCharReducer.activeChat);
   const privateChatList = useSelector((store) => store.generalCharReducer.privateChatList);
@@ -31,6 +32,9 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
   const onlineUsers = useSelector((store) => store.onlineUsers.users);
 
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -40,16 +44,11 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
     return () => window.removeEventListener("themeChange", handleThemeChange);
   }, []);
 
-  // Modals state
-  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-
   const handleLogout = async (e) => {
     dispatch(logoutRequest());
     try {
       await api.post("/auth/logout");
+      socket.disconnect();
       dispatch(logoutSuccess());
     } catch (err) {
       dispatch(logoutFail(err.response?.data?.message || "Something went wrong"));
@@ -351,7 +350,7 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
           {/* Light Theme Profile card */}
           <div className="dark:hidden p-3 rounded-2xl bg-white shadow-xs border border-gray-200/55 hover:shadow-sm transition-all duration-200">
             <div 
-              onClick={() => setIsProfileModalOpen(true)}
+              onClick={() => navigate("/profile")}
               className="flex items-center justify-between cursor-pointer group"
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -400,7 +399,7 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
           {/* Dark Theme Profile card */}
           <div className="hidden dark:block p-3 rounded-2xl bg-[#131522]/85 border border-slate-805/40">
             <div 
-              onClick={() => setIsProfileModalOpen(true)}
+              onClick={() => navigate("/profile")}
               className="flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -452,7 +451,6 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
       <UsersModal isOpen={isUsersModalOpen} onClose={() => setIsUsersModalOpen(false)} />
       <CreateGroupModal isOpen={isCreateGroupModalOpen} onClose={() => setIsCreateGroupModalOpen(false)} />
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
-      <UserProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} userId={user?._id || user?.id} />
     </>
   );
 };

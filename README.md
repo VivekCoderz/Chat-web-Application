@@ -20,7 +20,7 @@ A real-time social chat app: one-to-one messaging, short video reels and a built
 | Frontend | React, Vite, Redux Toolkit, Tailwind CSS, Socket.io client, Axios |
 | Backend | Node.js, Express, Socket.io, MongoDB (Mongoose), JWT, bcrypt |
 | Media | Cloudinary (Multer) |
-| Hosting | Vercel |
+| Hosting | Vercel (frontend), Render (backend) |
 
 ## Run locally
 
@@ -28,13 +28,13 @@ A real-time social chat app: one-to-one messaging, short video reels and a built
 # API + sockets
 cd backend
 npm install
-# create backend/.env with MONGO_URI, JWT_SECRET and Cloudinary keys
-npm start
+# create backend/.env with DB_URL, JWT_SECRET and CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+npm start          # http://localhost:4000
 
 # Client
 cd ../frontend
 npm install
-npm run dev
+npm run dev        # dev build talks to http://localhost:4000
 ```
 
 ## About
