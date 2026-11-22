@@ -7,8 +7,21 @@ const generateToken = (id) => {
   });
 };
 
+// The live frontend (Vercel) and API (Render) are on different sites, so the
+// auth cookie must be SameSite=None + Secure there. That only works over HTTPS,
+// so detect HTTPS from the request (Render terminates TLS at its proxy and sets
+// x-forwarded-proto) instead of relying on NODE_ENV being set on the host.
+const cookieOptions = (req) => {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+  const isHttps = req.secure || forwardedProto === "https" || process.env.NODE_ENV === "production";
+  return {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: isHttps ? "none" : "lax",
+  };
+};
+
 module.exports.signup = async (req, res) => {
-  console.log(req.body);
   try {
     const { name, email, password } = req.body;
 
@@ -36,12 +49,9 @@ module.exports.signup = async (req, res) => {
 
     const token = generateToken(user._id);
 
-    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
-      httpOnly: true,
+      ...cookieOptions(req),
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(201).json({
@@ -50,6 +60,7 @@ module.exports.signup = async (req, res) => {
 
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -94,12 +105,9 @@ module.exports.login = async (req, res) => {
 
     const token = generateToken(user._id);
 
-    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", token, {
-      httpOnly: true,
+      ...cookieOptions(req),
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
     });
 
     res.status(200).json({
@@ -108,6 +116,7 @@ module.exports.login = async (req, res) => {
 
       user: {
         id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -122,12 +131,7 @@ module.exports.login = async (req, res) => {
 };
 
 module.exports.logout = async (req, res) => {
-  const isProduction = process.env.NODE_ENV === "production";
-  res.clearCookie("token", {
-    httpOnly: true,
-    sameSite: isProduction ? "none" : "lax",
-    secure: isProduction,
-  });
+  res.clearCookie("token", cookieOptions(req));
 
   return res.status(200).json({
     success: true,
