@@ -48,6 +48,7 @@ const Sidebar = ({ isOpen, onClose, isMobileInline }) => {
     dispatch(logoutRequest());
     try {
       await api.post("/auth/logout");
+      socket.disconnect();
       dispatch(logoutSuccess());
     } catch (err) {
       dispatch(logoutFail(err.response?.data?.message || "Something went wrong"));

@@ -552,6 +552,8 @@ const Home = () => {
   }, [activeChat, dispatch]);
 
   useEffect(() => {
+    if (!socket.connected) socket.connect();
+
     // Fetch initial online list, private partners, and group list from backend
     socket.emit("getOnlineUsers");
     socket.emit("getChatPartners");
